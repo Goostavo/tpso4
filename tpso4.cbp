@@ -39,7 +39,9 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="hwif.h" />
-		<Unit filename="mainDriver.cpp" />
+		<Unit filename="mainDriver.c">
+			<Option compilerVar="CC" />
+		</Unit>
 		<Extensions>
 			<code_completion />
 			<debugger />
