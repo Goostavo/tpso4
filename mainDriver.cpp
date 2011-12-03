@@ -2,11 +2,12 @@
 //Gustavo Garcia e Vinícius Lana
 //Main para testes do driver
 
-#include <stdio.h>
+#include <iostream>
 #include "driver.h"
 
 int main(void)
 {
 
+    std::cout << "Hello World!" << std::endl;
     return 0;
 }
