@@ -31,6 +31,17 @@
 		<Compiler>
 			<Add option="-Wall" />
 		</Compiler>
+		<Unit filename="driver.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="driver.h" />
+		<Unit filename="hwif.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="hwif.h" />
+		<Unit filename="mainDriver.c">
+			<Option compilerVar="CC" />
+		</Unit>
 		<Extensions>
 			<code_completion />
 			<debugger />
