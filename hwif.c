@@ -172,6 +172,7 @@ device_execute( int opcode )
         break;
         default:
             fprintf(stderr,"Device execute(opcode:%d)?\n",opcode);
+            return (-1);
         break;
     }
 }
@@ -294,11 +295,4 @@ hw_shutdown(void)
         fprintf(stderr,"Erro ao salvar o conteúdo do dispositivo\n");
         exit(9);
     }
-}
-
-
-int main()
-{
-    return 0;
-
 }
