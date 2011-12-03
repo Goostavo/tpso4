@@ -1,9 +1,10 @@
+
 /*
  * Programa de emulação do dispositivo de memória em blocos para a
  * disciplina de Sistemas Operacionais.
  *
  **********************************************************************
- * NÃO SE PREOCUPE COM O CONTEÚDO DESTE ARQUIVO. ELE NÃO PODE SER 
+ * NÃO SE PREOCUPE COM O CONTEÚDO DESTE ARQUIVO. ELE NÃO PODE SER
  * ALTERADO EM HIPÓTESE ALGUMA E SERVE APENAS PARA CRIAR A ESTRUTURA
  * INTERNA DO DISPOSITIVO DE HARDWARE. PARA O TRABALHO, BASTA O USO
  * DAS FUNÇÕES DEFINIDAS NA INTERFACE (hwif.h)
@@ -45,7 +46,7 @@ void hw_shutdown(void);
 #define ENV_DEV_FILENAME   "SODEV_FILENAME"
 #define ENV_DEV_BLCK_CNT   "SODEV_BLCK_CNT"
 #define ENV_DEV_BLCK_SIZE  "SODEV_BLCK_SIZE"
-#define ENV_DEV_DEBUG      "SODEV_DEBUG" 
+#define ENV_DEV_DEBUG      "SODEV_DEBUG"
 
 /* Arquivo para armazenamento do dispositivo: nome, descritor e tamanho */
 char* storage_fname;
@@ -98,7 +99,7 @@ void hw_wait(void)
 {
     /* Na verdade, ao invés de apenas esperar, já que estamos apenas
      * simulando uma operação assíncrona, agora é a hora de executar o
-     * comando requisitado. 
+     * comando requisitado.
      */
     hw_status_reg = device_execute(hw_command_reg);
 }
@@ -135,36 +136,36 @@ open_storage(char* name)
  * cada um deve ser auto-explicativo. Apenas a parte de inicialização
  * exigem processamento mais complexo e é definida nas funções associadas.
  */
-int 
+int
 device_execute( int opcode )
 {
     char* blck_ptr;
     int   blck_num;
 
     usleep(OPTIME);
-    switch( (opcode>>BLCKFIELDLEN)<<BLCKFIELDLEN) /* & 0xff000000) */ {
-        case DEV_OP_START:
+    switch( (opcode>>HWBLCKFIELDLEN)<<HWBLCKFIELDLEN) /* & 0xff000000) */ {
+        case HW_OP_START:
             if (debug>0) fprintf(stderr,"device_execute(DEV_OP_START)\n");
             return init_storage(storage_fname, &storage_fd);
-        case DEV_OP_BLCKSIZE:
+        case HW_OP_BLCKSIZE:
             if (debug>0) fprintf(stderr,"device_execute(DEV_OP_BLCKSIZE)\n");
             return hw_blck_size;
-        case DEV_OP_BLCKCNT:
+        case HW_OP_BLCKCNT:
             if (debug>0) fprintf(stderr,"device_execute(DEV_OP_BLCKCNT)\n");
             return hw_blck_cnt;
-        case DEV_OP_WRBLCK:
+        case HW_OP_WRBLCK:
             blck_num = opcode & 0x0000ffff;
             blck_ptr = storage + (blck_num*hw_blck_size);
             if (debug>0) fprintf(stderr,"device_execute(DEV_OP_WRBLCK,%d)\n",blck_num);
             memcpy(blck_ptr,hw_block_to_write,hw_blck_size);
             return 0;
-        case DEV_OP_RDBLCK:
+        case HW_OP_RDBLCK:
             if (debug>0) fprintf(stderr,"device_execute(DEV_OP_RDBLCK)\n");
             blck_num = opcode & 0x0000ffff;
             blck_ptr = storage + (blck_num*hw_blck_size);
             memcpy(hw_block_read,blck_ptr,hw_blck_size);
             return 0;
-        case DEV_OP_SHUTDOWN:
+        case HW_OP_SHUTDOWN:
             if (debug>0) fprintf(stderr,"device_execute(DEV_OP_SHUTDOWN)\n");
             hw_shutdown();
             return(0);
@@ -206,7 +207,7 @@ init_storage(char* fname, int* fd)
             return(10);
     }
     return(0);
-} 
+}
 
 int
 create_new_storage(char* fname, int* fd)
@@ -264,9 +265,9 @@ read_storage(char* fname, int* fd, int fsize)
     storage_size = hw_blck_cnt * hw_blck_size;
     storage_file_size = FILE_HEADER_SIZE + storage_size;
     return(0);
-} 
+}
 
-/* hw_shutdown: 
+/* hw_shutdown:
  * termina a operação do dispositivo. Salva o conteúdo da área de memória
  * do mesmo no arquivo apropriado. As áreas de memória compartilhada ainda
  * permanecem, pois é preciso avisar ao outro processo que o comando foi
@@ -295,3 +296,9 @@ hw_shutdown(void)
     }
 }
 
+
+int main()
+{
+    return 0;
+
+}
