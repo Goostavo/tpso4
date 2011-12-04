@@ -9,10 +9,10 @@ int main(void)
 {
     int temp;
     temp =driver_init("Teste_log");
-    printf("Inicializado com status:%d",temp);
+    printf("\n\nInicializado com status:%d\n",temp);
     temp=driver_blcksize();
-    printf("Block size:%d",temp);
+    printf("Block size:%d\n",temp);
     temp=driver_blckcount();
-    printf("Block count:%d",temp);
+    printf("Block count:%d\n",temp);
     return 0;
 }
