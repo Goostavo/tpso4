@@ -68,4 +68,5 @@ int achaPosFinal(int ultimoBloco);
 //Funcao para encontra o primeiro bloco livre
 int achaBlocoLivre(void);
 
+int pegaEndereco(void);
 #endif // _LOGSERV_H_

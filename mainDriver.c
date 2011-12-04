@@ -11,8 +11,17 @@
 #define ESCRITA 1
 int main(void)
 {
+    int logid1;
+    char TesteBuffer[25];
     logserv_init("Log1.dat");
-    logserv_openlog("Logaritmo",1);
+    logid1 = logserv_openlog("Logaritmo",0);
+    logserv_readlog(logid1,TesteBuffer,20);
+    printf("%s\n",TesteBuffer);
+    logserv_readlog(logid1,TesteBuffer,20);
+    printf("%s\n",TesteBuffer);
+    logserv_readlog(logid1,TesteBuffer,20);
+    printf("%s\n",TesteBuffer);
+
     logserv_shutdown();
     return 0;
 }

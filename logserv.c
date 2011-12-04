@@ -60,6 +60,7 @@ int logserv_init( char* devname )
                     logTable[aux].nome[i]=tempbuffer[4+i];
                 }
                 logTable[aux].startBlock = blocknum;
+                logTable[aux].mode = -1;              //Desativado para leitura/escrita por padrao
             }
         }
         blocknum++;
@@ -99,10 +100,8 @@ int logserv_openlog( char* logname, int mode )
         //Se for modo de leitura pega o primeiro lugar
         if (mode == 0)
         {
-            printf("debug1\n");
             logTable[aux].pointBLK = logTable[aux].startBlock;
-            logTable[aux].pointPOS = 0;
-            printf("debug2\n");
+            logTable[aux].pointPOS = 20;
         }
         else
         {
@@ -122,21 +121,34 @@ int logserv_openlog( char* logname, int mode )
             logTable[aux].mode = mode;
             auxPos = achaBlocoLivre();
             logTable[aux].startBlock = auxPos;
+            logTable[aux].pointBLK = auxPos;
+            logTable[aux].pointPOS = 20;
 
             for(aux2=4; aux2<512;aux2++)
             {
                 tempbuffer[aux2] = 0;
             }
             //Sobe o bit inicial e seta os outros em FFFFFF
-            tempbuffer[0] = 0x80;
-            tempbuffer[1] = 0xFF;
-            tempbuffer[2] = 0xFF;
-            tempbuffer[3] = 0xFF;
+            tempbuffer[0] = -128;
+            tempbuffer[1] = -1;
+            tempbuffer[2] = -1;
+            tempbuffer[3] = -1;
             //Escreve o nome
             for(aux2 = 0; aux2<16;aux2++)
             {
                 tempbuffer[4+aux2]=logname[aux2];
+                if (logname[aux2]=='\0')
+                {
+                    aux2++;
+                    while (aux2<16)
+                    {
+                        tempbuffer[4+aux2] = 0;
+                        aux2++;
+                    }
+                }
             }
+            //Marca posicao incial
+            tempbuffer[20]='\n';
             driver_write(auxPos, tempbuffer);
             return aux;
         }
@@ -148,7 +160,9 @@ int logserv_openlog( char* logname, int mode )
  */
 int logserv_closelog( int logid )
 {
-    //Rascunho
+    //Como o driver tem suporte a logs concorrentes, para desativar a
+    //leitura/escrita basta deixar o modo como invalido.
+    logTable[logid].mode = -1;
     return 0;
 }
 /* logserv_writelog: se o log foi aberto para escrita, escreve a mensagem
@@ -157,7 +171,52 @@ int logserv_closelog( int logid )
  */
 int logserv_writelog( int logid, char* buffer, int buflen)
 {
-    //Rascunho
+    int contaChar = 0;
+    int posicao;
+    int aux;
+    if (logTable[logid].mode != 1)
+    {
+        printf("Erro:O log nao esta em modo de escrita!\n");
+        return -1;
+    }
+    //Carrega pagina
+    driver_read(logTable[logid].pointBLK,tempbuffer);
+    posicao = logTable[logid].pointPOS;
+    //Comeca a escrever os caracteres
+    while (contaChar < (buflen+1))
+    {
+        if (posicao < blocksize)
+        {
+            if (contaChar < buflen)
+                tempbuffer[posicao] = buffer[contaChar];
+            else
+                tempbuffer[posicao]='\n';
+            contaChar++; posicao++;
+        }
+        else
+        {
+            //Salva bloco
+            driver_write(logTable[logid].pointBLK,tempbuffer);
+            //Encontra proximo espaco livre
+            aux = achaBlocoLivre();
+            //Refaz as linkagens
+            driver_read(logTable[logid].pointBLK,tempbuffer);
+            tempbuffer[1]=(char)((aux << 16));
+            tempbuffer[2]=(char)((aux << 8));
+            tempbuffer[3]=(char)(aux);
+            driver_write(logTable[logid].pointBLK,tempbuffer);
+            driver_read(aux,tempbuffer);
+            tempbuffer[0]=0;
+            tempbuffer[1]=-1;
+            tempbuffer[2]=-1;
+            tempbuffer[3]=-1;
+            logTable[logid].pointBLK = aux;
+            driver_write(aux,tempbuffer);
+            posicao = 4;
+        }
+    }
+    driver_write(logTable[logid].pointBLK,tempbuffer);
+    logTable[logid].pointPOS = posicao;
     return 0;
 }
 /* logserv_readlog: se o log foi aberto para leitura, extrai a próxima
@@ -170,7 +229,43 @@ int logserv_writelog( int logid, char* buffer, int buflen)
  */
 int logserv_readlog( int logid, char* buffer, int buflen)
 {
-    //Rascunho
+    int contaChar = 0;
+    int posicao;
+    int aux;
+    if (logTable[logid].mode != 0)
+    {
+        printf("Erro:O log nao esta em modo de leitura!\n");
+        return -1;
+    }
+    //Carrega pagina
+    driver_read(logTable[logid].pointBLK,tempbuffer);
+    posicao = logTable[logid].pointPOS;
+    //Copia a escrever os caracteres
+    while (contaChar < buflen)
+    {
+        if (posicao < blocksize)
+        {
+            if (contaChar < buflen)
+                buffer[contaChar] = tempbuffer[posicao];
+            contaChar++; posicao++;
+        }
+        else
+        {
+            aux = pegaEndereco();
+            if (aux == 0x00FFFFFF)
+            {
+                printf("Final do log atingido. \n");
+                return 0;
+            }
+            else
+            {
+                logTable[logid].pointBLK = aux;
+                driver_read(aux,tempbuffer);
+                posicao = 4;
+            }
+        }
+    }
+    logTable[logid].pointPOS = posicao;
     return 0;
 }
 
@@ -182,15 +277,15 @@ int achaBlocoFinal(int blocoInicial)
     while (conta_saltos < 0x00FFFFFF)
     {
         driver_read(blocoInicial, tempbuffer);
-        aux=((int)tempbuffer[0] << 24)|((int)tempbuffer[1] << 16)|((int)tempbuffer[2] << 8)|((int)tempbuffer[3]);
-        if ((aux & 0x00FFFFFF) >= 0x00FFFFFF)
+        aux=pegaEndereco();
+        if (aux == 0x00FFFFFF)
         {
             return blocoInicial;
         }
         else
         {
-            aux=((int)tempbuffer[0] << 24)|((int)tempbuffer[1] << 16)|((int)tempbuffer[2] << 8)|((int)tempbuffer[3]);
-            blocoInicial = (aux & 0x00FFFFFF);
+            aux=pegaEndereco();
+            blocoInicial = aux;
         }
         conta_saltos++;
     }
@@ -210,10 +305,18 @@ int achaPosFinal(int ultimoBloco)
 
     while(posicao < blocksize)
     {
-        if (tempbuffer[posicao]==0)
+        if (tempbuffer[posicao]=='\n')
         {
             break;
         }
+        posicao++;
+    }
+    if (posicao >= blocksize)
+    {
+        if (tempbuffer[0] == -128)
+            posicao = 20;
+        else
+            posicao = 4;
     }
     return posicao;
 }
@@ -226,7 +329,7 @@ int achaBlocoLivre(void)
     while (conta_saltos < blockcount)
     {
         driver_read(conta_saltos, tempbuffer);
-        aux=((int)tempbuffer[0] << 24)|((int)tempbuffer[1] << 16)|((int)tempbuffer[2] << 8)|((int)tempbuffer[3]);
+        aux=pegaEndereco();
         if (aux == 0 )
         {
             return conta_saltos;
@@ -235,4 +338,20 @@ int achaBlocoLivre(void)
     }
     printf("Memoria esgotada, nao foi possivel alocar espaco para o log\n");
     return -1;
+}
+
+//Funcao para extrair endereco do tempBuffer
+int pegaEndereco(void)
+{
+    int abc = 0;
+    abc = abc + (int)(tempbuffer[3] & 0x7F);
+    abc = abc + (int)(tempbuffer[3] & 0x80);
+
+    abc = abc + ((int)(tempbuffer[2] & 0x7F) << 8);
+    abc = abc + ((int)(tempbuffer[2] & 0x80) << 8);
+
+    abc = abc + ((int)(tempbuffer[1] & 0x7F) << 16);
+    abc = abc + ((int)(tempbuffer[1] & 0x80) << 16);
+
+    return abc;
 }
