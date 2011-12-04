@@ -18,26 +18,6 @@ int main(void)
     temp=driver_blckcount();
     printf("Block count:%d\n",temp);
 
-    for (temp=0;temp<511;temp++)
-    {
-        buffer[temp] = (char)temp;
-    }
-    buffer[511] = '\0';
-
-    for(temp=1;temp<10;temp++)
-    {
-        driver_write(temp,buffer);
-    }
-
-    for(temp=1;temp<10;temp++)
-    {
-        for (temp2=0;temp2<512;temp2++)
-        {
-            buffer[temp] = 0;
-        }
-        driver_read(temp,buffer);
-        printf("%s\n",buffer);
-    }
-
+    driver_shutdown();
     return 0;
 }

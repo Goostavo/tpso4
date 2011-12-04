@@ -55,10 +55,10 @@ int driver_blckcount(void)
  */
 int driver_read(int blocknum, char* blockbuffer)
 {
+    hw_block_read = blockbuffer;
     hw_command_reg = HW_OP_RDBLCK | blocknum;
     hw_trigger();
     hw_wait();
-    blockbuffer=hw_block_read;
     return hw_status_reg;
 }
 
