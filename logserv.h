@@ -12,6 +12,7 @@ typedef struct
     int pointBLK;       //Ponteiro de IO para bloco
     int pointPOS;       //Ponteiro de IO para posicao no bloco
     int mode;           //Modo de IO
+    int startBlock;     //Bloco inicial do Log
 }Log_s;
 
 /* logserv_init configura o serviço, antes dele poder ser usado, passando o
@@ -63,6 +64,7 @@ int logserv_readlog( int logid, char* buffer, int buflen);
 
 //Funcao para encontrar o ultimo bloco do arquivo
 int achaBlocoFinal(int blocoInicial);
+int achaPosFinal(int ultimoBloco);
 //Funcao para encontra o primeiro bloco livre
 int achaBlocoLivre(void);
 

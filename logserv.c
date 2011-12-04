@@ -37,11 +37,10 @@ int logserv_init( char* devname )
     {
         driver_read(blocknum,tempbuffer);
         aux=((int)tempbuffer[0] << 24)|((int)tempbuffer[1] << 16)|((int)tempbuffer[2] << 8)|((int)tempbuffer[3]);
-        printf("\n%d",aux);
         //Se for espaço livre, termina.
         if (aux==0) break;
         //Verifica (formalmente) se é o primeiro
-        if (((unsigned int)tempbuffer[0]<<31)&1)
+        if (tempbuffer[0]==-128)
         {
             aux = 0;
             //Guarda na tabela de logs
@@ -60,6 +59,7 @@ int logserv_init( char* devname )
                 {
                     logTable[aux].nome[i]=tempbuffer[4+i];
                 }
+                logTable[aux].startBlock = blocknum;
             }
         }
         blocknum++;
@@ -94,9 +94,21 @@ int logserv_openlog( char* logname, int mode )
     //Se aux<16 o log ja existe
     if (aux <16)
     {
-        printf("Log encontrado, ID:%d, modo> %d \n",aux,mode);
+        printf("Log encontrado, ID:%d, modo: %d \n",aux,mode);
         logTable[aux].mode = mode;
-        //Acha final ou inicio do Log
+        //Se for modo de leitura pega o primeiro lugar
+        if (mode == 0)
+        {
+            printf("debug1\n");
+            logTable[aux].pointBLK = logTable[aux].startBlock;
+            logTable[aux].pointPOS = 0;
+            printf("debug2\n");
+        }
+        else
+        {
+            logTable[aux].pointBLK = achaBlocoFinal(logTable[aux].startBlock);
+            logTable[aux].pointPOS = achaPosFinal(logTable[aux].pointBLK);
+        }
         return aux;
     }
     //Senao cria o log
@@ -109,13 +121,17 @@ int logserv_openlog( char* logname, int mode )
             printf("Log criado, ID:%d, modo: %d \n",aux,mode);
             logTable[aux].mode = mode;
             auxPos = achaBlocoLivre();
+            logTable[aux].startBlock = auxPos;
 
-            for(aux2=1; aux2<512;aux2++)
+            for(aux2=4; aux2<512;aux2++)
             {
                 tempbuffer[aux2] = 0;
             }
-            //Sobe o bit inicial
+            //Sobe o bit inicial e seta os outros em FFFFFF
             tempbuffer[0] = 0x80;
+            tempbuffer[1] = 0xFF;
+            tempbuffer[2] = 0xFF;
+            tempbuffer[3] = 0xFF;
             //Escreve o nome
             for(aux2 = 0; aux2<16;aux2++)
             {
@@ -163,22 +179,43 @@ int achaBlocoFinal(int blocoInicial)
 {
     int conta_saltos = 0;
     int aux;
-    while (conta_saltos < 0xFFFFFFFF)
+    while (conta_saltos < 0x00FFFFFF)
     {
         driver_read(blocoInicial, tempbuffer);
         aux=((int)tempbuffer[0] << 24)|((int)tempbuffer[1] << 16)|((int)tempbuffer[2] << 8)|((int)tempbuffer[3]);
-        if (aux >= 0x0FFFFFFF)
+        if ((aux & 0x00FFFFFF) >= 0x00FFFFFF)
         {
             return blocoInicial;
         }
         else
         {
             aux=((int)tempbuffer[0] << 24)|((int)tempbuffer[1] << 16)|((int)tempbuffer[2] << 8)|((int)tempbuffer[3]);
-            blocoInicial = (aux & 0x0FFFFFFF);
+            blocoInicial = (aux & 0x00FFFFFF);
         }
         conta_saltos++;
     }
     return -1;
+}
+
+//Funcao para encontrar a ultima posicao
+int achaPosFinal(int ultimoBloco)
+{
+    int posicao;
+    driver_read(ultimoBloco, tempbuffer);
+    //Checa se eh o primeiro vetor
+    if (tempbuffer[0] == -128)
+        posicao = 20;
+    else
+        posicao = 4;
+
+    while(posicao < blocksize)
+    {
+        if (tempbuffer[posicao]==0)
+        {
+            break;
+        }
+    }
+    return posicao;
 }
 
 //Funcao para encontrar o primeiro bloco livre
