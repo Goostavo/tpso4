@@ -37,6 +37,7 @@ int logserv_init( char* devname )
     {
         driver_read(blocknum,tempbuffer);
         aux=((int)tempbuffer[0] << 24)|((int)tempbuffer[1] << 16)|((int)tempbuffer[2] << 8)|((int)tempbuffer[3]);
+        printf("\n%d",aux);
         //Se for espaço livre, termina.
         if (aux==0) break;
         //Verifica (formalmente) se é o primeiro
@@ -44,7 +45,7 @@ int logserv_init( char* devname )
         {
             aux = 0;
             //Guarda na tabela de logs
-            while(aux < 16 || logTable[aux].existe!=0)
+            while(aux < 16 && logTable[aux].existe==1)
             {
                 aux++;
             }
@@ -61,6 +62,7 @@ int logserv_init( char* devname )
                 }
             }
         }
+        blocknum++;
     }
     return 0;
 }
@@ -112,8 +114,8 @@ int logserv_openlog( char* logname, int mode )
             {
                 tempbuffer[aux2] = 0;
             }
-            //Sobe o byte inicial
-            tempbuffer[0] = (char)0x80;
+            //Sobe o bit inicial
+            tempbuffer[0] = 0x80;
             //Escreve o nome
             for(aux2 = 0; aux2<16;aux2++)
             {
@@ -186,7 +188,7 @@ int achaBlocoLivre(void)
     int aux;
     while (conta_saltos < blockcount)
     {
-        driver_read(0, tempbuffer);
+        driver_read(conta_saltos, tempbuffer);
         aux=((int)tempbuffer[0] << 24)|((int)tempbuffer[1] << 16)|((int)tempbuffer[2] << 8)|((int)tempbuffer[3]);
         if (aux == 0 )
         {
