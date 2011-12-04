@@ -157,8 +157,17 @@ int logserv_closelog( int logid )
  */
 int logserv_writelog( int logid, char* buffer, int buflen)
 {
-    //Rascunho
-    return 0;
+    int erro;
+    if(logTable[logid].mode==0)
+    {
+        printf("Erro: Log ID:%d é de modo leitura",logid);
+    }
+    else
+    {
+        erro=driver_write(logid,buffer);
+    }
+    if(erro!=0) return -1;
+    else return 0;
 }
 /* logserv_readlog: se o log foi aberto para leitura, extrai a próxima
  * mensagem do log e a armazena no buffer dado, até o tamanho máximo buflen.
@@ -170,8 +179,17 @@ int logserv_writelog( int logid, char* buffer, int buflen)
  */
 int logserv_readlog( int logid, char* buffer, int buflen)
 {
-    //Rascunho
-    return 0;
+    int erro;
+    if(logTable[logid].mode!=0)
+    {
+        printf("Erro: Log ID:%d é de modo escrita",logid);
+    }
+    else
+    {
+        erro=driver_read(logid,buffer);
+    }
+    if(erro!=0) return -1;
+    else return 0;
 }
 
 //Funcao para encontrar o ultimo bloco do arquivo
