@@ -4,20 +4,15 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "driver.h"
+#include "logserv.h"
 
+//Modos de Operacao
+#define LEITURA 0
+#define ESCRITA 1
 int main(void)
 {
-    int temp, temp2;
-    char* buffer;
-    buffer = (char*)malloc(4096);
-    temp =driver_init("Teste_log");
-    printf("\n\nInicializado com status:%d\n",temp);
-    temp=driver_blcksize();
-    printf("Block size:%d\n",temp);
-    temp=driver_blckcount();
-    printf("Block count:%d\n",temp);
-
-    driver_shutdown();
+    logserv_init("Log1.dat");
+    logserv_openlog("Logaritmo",1);
+    logserv_shutdown();
     return 0;
 }

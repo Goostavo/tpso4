@@ -5,6 +5,14 @@
 #ifndef _LOGSERV_H_
 #define _LOGSERV_H_
 
+typedef struct
+{
+    int existe;         //Flag para se esta sendo utilizado ou nao
+    char nome[16];      //o NOME ja diz tudo
+    int pointBLK;       //Ponteiro de IO para bloco
+    int pointPOS;       //Ponteiro de IO para posicao no bloco
+    int mode;           //Modo de IO
+}Log_s;
 
 /* logserv_init configura o serviço, antes dele poder ser usado, passando o
  * nome do arquivo a ser utilizado pelo dispositivo
@@ -16,32 +24,32 @@ int logserv_init( char* devname );
  */
 void logserv_shutdown( void );
 
-/* logserv_openlog abre um dispositivo com um log já existente, 
+/* logserv_openlog abre um dispositivo com um log já existente,
  * ou cria o log pela primeira vez. O nome do log pode ter até 15
  * caracteres.
  * O modo de operação é leitura, se mode é zero, e escrita caso contrário.
  * No modo de leitura, o cursor do log estará no seu início,
- * no modo de escrita, ele estará ao final do mesmo.  
- * Retorna um inteiro que será usado como identificador do log 
+ * no modo de escrita, ele estará ao final do mesmo.
+ * Retorna um inteiro que será usado como identificador do log
  * dentro do sistema, ou um valor menor que zero em caso de erro;
  */
 int logserv_openlog( char* logname, int mode );
 
-/* logserv_closelog termina a utilização do serviço para 
+/* logserv_closelog termina a utilização do serviço para
  * aquele log em particular, identificado pelo parâmetro logid;
  */
 int logserv_closelog( int logid );
 
-/* logserv_writelog: se o log foi aberto para escrita, escreve a mensagem 
- * contida no buffer, até o tamanho buflen, ao final do log, junto com 
+/* logserv_writelog: se o log foi aberto para escrita, escreve a mensagem
+ * contida no buffer, até o tamanho buflen, ao final do log, junto com
  * a hora do sistema, como retornada pela função time da biblioteca padrão;
  */
 int logserv_writelog( int logid, char* buffer, int buflen);
 
-/* logserv_readlog: se o log foi aberto para leitura, extrai a próxima 
- * mensagem do log e a armazena no buffer dado, até o tamanho máximo buflen. 
+/* logserv_readlog: se o log foi aberto para leitura, extrai a próxima
+ * mensagem do log e a armazena no buffer dado, até o tamanho máximo buflen.
  * Se a mensagem é maior que o buffer, o restante é descartado.
- * Retorna um inteiro que representa o instante em que a mensagem foi 
+ * Retorna um inteiro que representa o instante em que a mensagem foi
  * registrada no log, como descrito para a operação de escrita;
  * Se já atingiu o fim do log (depois de ler a última mensagem), retorna
  * zero e não atualiza o buffer.
@@ -52,5 +60,10 @@ int logserv_readlog( int logid, char* buffer, int buflen);
  * e a variável global errno oferece uma descrição do erro, que pode ser
  * transformado em uma mensagem na tela pela função perror (da stdio).
  */
+
+//Funcao para encontrar o ultimo bloco do arquivo
+int achaBlocoFinal(int blocoInicial);
+//Funcao para encontra o primeiro bloco livre
+int achaBlocoLivre(void);
 
 #endif // _LOGSERV_H_
