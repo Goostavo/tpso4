@@ -39,6 +39,10 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="hwif.h" />
+		<Unit filename="logserv.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="logserv.h" />
 		<Unit filename="mainDriver.c">
 			<Option compilerVar="CC" />
 		</Unit>
