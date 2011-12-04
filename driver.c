@@ -11,16 +11,22 @@ extern char* hw_block_read;
 //Funcoes do driver
 int driver_init(char* dev_name)
 {
-    //rascunho
-    return 0;
+    //Define nome do arquivo usado para armazenar memória do dispositivo
+    hw_initialize(dev_name);
+    hw_command_reg = HW_OP_START;
+    hw_trigger();
+    hw_wait();
+    return hw_status_reg;
 }
 
 /* ``desliga'' o dispositivo, salvando os dados no arquivo associado;
  */
 int driver_shutdown(void)
 {
-    //Rascunho
-    return 0;
+    hw_command_reg = HW_OP_SHUTDOWN;
+    hw_trigger();
+    hw_wait();
+    return hw_status_reg;
 }
 
 /* Tamanho do bloco e no. de blocos são uma característica do dispositivo
@@ -37,8 +43,10 @@ int driver_blcksize(void)
 }
 int driver_blckcount(void)
 {
-    //Rascunho
-    return 0;
+    hw_command_reg = HW_OP_BLCKCNT;
+    hw_trigger();
+    hw_wait();
+    return hw_status_reg;
 }
 
 /* lê do dispositivo um bloco identificado por blocknum, copiando-o
@@ -47,8 +55,11 @@ int driver_blckcount(void)
  */
 int driver_read(int blocknum, char* blockbuffer)
 {
-    //Rascunho
-    return 0;
+    hw_command_reg = HW_OP_RDBLCK | blocknum;
+    hw_trigger();
+    hw_wait();
+    blockbuffer=hw_block_read;
+    return hw_status_reg;
 }
 
 /* escreve o conteúdo do buffer para o bloco de número blocknum,
@@ -56,6 +67,9 @@ int driver_read(int blocknum, char* blockbuffer)
  */
 int driver_write(int blocknum, char* blockbuffer)
 {
-    //Rascunho
-    return 0;
+    hw_block_to_write=blockbuffer;
+    hw_command_reg = HW_OP_WRBLCK | blocknum;
+    hw_trigger();
+    hw_wait();
+    return hw_status_reg;
 }

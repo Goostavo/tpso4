@@ -7,7 +7,12 @@
 
 int main(void)
 {
-
-    std::cout << "Hello World!" << std::endl;
+    int temp;
+    temp = driver::driver_init("Teste_log");
+    std::cout<<"Inicializado com status:"<<temp<<std::endl;
+    temp=driver::driver_blcksize();
+    std::cout<<"Block Size:"<<temp<<std::endl;
+    temp=driver::driver_blckcount();
+    std::cout<<"Block Count:"<<temp<<std::endl;
     return 0;
 }
